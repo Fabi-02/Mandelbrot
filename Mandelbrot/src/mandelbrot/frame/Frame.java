@@ -7,6 +7,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -29,7 +30,7 @@ public class Frame extends JPanel implements ActionListener {
 	public double posX = 0;
 	public double posY = 0;
 
-	double[][] field;
+	BufferedImage img;
 
 	public Frame() {
 		frame = new JFrame("Mandelbrot");
@@ -45,13 +46,7 @@ public class Frame extends JPanel implements ActionListener {
 	Timer timer;
 
 	private void init() {
-		field = new double[600][];
-		for (int x = 0; x < 600; x++) {
-			field[x] = new double[600];
-			for (int y = 0; y < 600; y++) {
-				field[x][y] = 0;
-			}
-		}
+		img = new BufferedImage(600, 600, BufferedImage.TYPE_INT_ARGB);
 
 		calculateMandelbrot();
 
@@ -74,7 +69,11 @@ public class Frame extends JPanel implements ActionListener {
 						break;
 					}
 				}
-				field[x][y] = i;
+				if (i == ITERATIONS) {
+					img.setRGB(x, y, Color.BLACK.getRGB());
+				} else {
+					img.setRGB(x, y, Color.HSBtoRGB((((float) i / ITERATIONS) + hueOffset) % 1, 0.9f, 1f));
+				}
 			}
 		}
 	}
@@ -83,17 +82,7 @@ public class Frame extends JPanel implements ActionListener {
 	public void paint(Graphics g) {
 		Graphics2D g2D = (Graphics2D) g;
 
-		for (int x = 0; x < 600; x++) {
-			for (int y = 0; y < 600; y++) {
-				double dis = field[x][y];
-				if (dis == ITERATIONS) {
-					g2D.setColor(new Color(0x000));
-				} else {
-					g2D.setColor(new Color(Color.HSBtoRGB((((float) dis / ITERATIONS) + hueOffset) % 1, 1f, 1f)));
-				}
-				g2D.drawLine(10 + x, 10 + y, 10 + x, 10 + y);
-			}
-		}
+		g2D.drawImage(img, 10, 10, null);
 
 		g2D.setColor(Color.BLACK);
 
@@ -110,7 +99,16 @@ public class Frame extends JPanel implements ActionListener {
 
 	private class Listener extends KeyAdapter {
 
+		private boolean press = false;
+		
 		public void keyPressed(KeyEvent e) {
+			
+			if (press == true) {
+				return;
+			}
+			
+			press = true;
+			
 			if (e.getKeyCode() == KeyEvent.VK_UP) {
 				if (e.isControlDown()) {
 					zoom += zoom * 0.5;
@@ -148,6 +146,11 @@ public class Frame extends JPanel implements ActionListener {
 				}
 			}
 			calculateMandelbrot();
+		}
+		
+		@Override
+		public void keyReleased(KeyEvent e) {
+			press = false;
 		}
 	}
 }

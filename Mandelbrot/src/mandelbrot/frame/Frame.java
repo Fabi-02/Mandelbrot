@@ -1,6 +1,7 @@
 package mandelbrot.frame;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
@@ -23,7 +24,7 @@ import mandelbrot.utils.ImaginaryNum;
 public class Frame extends JPanel implements ActionListener {
 	JFrame frame;
 
-	final int ITERATIONS = 200;
+	public int ITERATIONS = 200;
 	final float hueOffset = 0.65f;
 
 	public double zoom = 1;
@@ -90,6 +91,15 @@ public class Frame extends JPanel implements ActionListener {
 		g2D.setColor(Color.WHITE);
 		g2D.drawLine(10 + 280, 10 + 300, 10 + 320, 10 + 300);
 		g2D.drawLine(10 + 300, 10 + 280, 10 + 300, 10 + 320);
+
+		g2D.setColor(Color.WHITE);
+		g2D.setFont(new Font("Courier", Font.BOLD, 20));
+		g2D.drawString("Interations (Alt): " + ITERATIONS, 15, 30);
+		g2D.drawString("Zoom (Ctrl): " + zoom, 15, 50);
+		g2D.setColor(Color.BLACK);
+		g2D.setFont(new Font("Courier", Font.BOLD, 20));
+		g2D.drawString("Interations (Alt): " + ITERATIONS, 16, 31);
+		g2D.drawString("Zoom (Ctrl): " + zoom, 16, 51);
 	}
 
 	@Override
@@ -100,36 +110,54 @@ public class Frame extends JPanel implements ActionListener {
 	private class Listener extends KeyAdapter {
 
 		private boolean press = false;
-		
+
 		public void keyPressed(KeyEvent e) {
-			
+
 			if (press == true) {
 				return;
 			}
-			
-			press = true;
-			
+
 			if (e.getKeyCode() == KeyEvent.VK_UP) {
 				if (e.isControlDown()) {
 					zoom += zoom * 0.5;
 				} else {
 					if (e.isShiftDown()) {
 						posY -= 100 / zoom;
+					} else if (e.isAltDown()) {
+						if (ITERATIONS < 10) {
+							ITERATIONS += 1;
+						} else if (ITERATIONS >= 200) {
+							ITERATIONS += 50;
+						} else {
+							ITERATIONS += 10;
+						}
 					} else {
 						posY -= 20 / zoom;
 					}
 				}
+				press = true;
 			}
 			if (e.getKeyCode() == KeyEvent.VK_DOWN) {
 				if (e.isControlDown()) {
-					zoom -= zoom * 0.5;
+					zoom -= zoom / 3;
 				} else {
 					if (e.isShiftDown()) {
 						posY += 100 / zoom;
+					} else if (e.isAltDown()) {
+						if (ITERATIONS <= 10) {
+							if (ITERATIONS > 1) {
+								ITERATIONS -= 1;
+							}
+						} else if (ITERATIONS > 200) {
+							ITERATIONS -= 50;
+						} else {
+							ITERATIONS -= 10;
+						}
 					} else {
 						posY += 20 / zoom;
 					}
 				}
+				press = true;
 			}
 			if (e.getKeyCode() == KeyEvent.VK_LEFT) {
 				if (e.isShiftDown()) {
@@ -137,6 +165,7 @@ public class Frame extends JPanel implements ActionListener {
 				} else {
 					posX -= 20 / zoom;
 				}
+				press = true;
 			}
 			if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
 				if (e.isShiftDown()) {
@@ -144,10 +173,11 @@ public class Frame extends JPanel implements ActionListener {
 				} else {
 					posX += 20 / zoom;
 				}
+				press = true;
 			}
 			calculateMandelbrot();
 		}
-		
+
 		@Override
 		public void keyReleased(KeyEvent e) {
 			press = false;

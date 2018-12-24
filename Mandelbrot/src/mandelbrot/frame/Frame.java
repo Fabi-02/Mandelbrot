@@ -70,7 +70,7 @@ public class Frame extends JPanel implements ActionListener {
 				int i = 0;
 				for (; i < ITERATIONS; i++) {
 					num2.multi(num2.clone()).add(num);
-					if (num2.r * num2.r + num2.j + num2.j > 4) {
+					if (num2.r * num2.r + num2.j * num2.j > 4) {
 						break;
 					}
 				}

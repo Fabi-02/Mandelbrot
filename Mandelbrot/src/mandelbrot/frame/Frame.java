@@ -31,13 +31,14 @@ public class Frame extends JPanel implements ActionListener {
 	public double posX = 0;
 	public double posY = 0;
 
-	BufferedImage img;
+	BufferedImage mandelImg;
+	BufferedImage juliaImg;
 
 	public Frame() {
 		frame = new JFrame("Mandelbrot");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setResizable(false);
-		frame.setSize(630, 650);
+		frame.setSize(1237, 650);
 		frame.setVisible(true);
 		frame.add(this);
 
@@ -47,9 +48,11 @@ public class Frame extends JPanel implements ActionListener {
 	Timer timer;
 
 	private void init() {
-		img = new BufferedImage(600, 600, BufferedImage.TYPE_INT_ARGB);
+		mandelImg = new BufferedImage(600, 600, BufferedImage.TYPE_INT_ARGB);
+		juliaImg = new BufferedImage(600, 600, BufferedImage.TYPE_INT_ARGB);
 
-		calculateMandelbrot();
+		calculateMandelbrotSet();
+		calculateJuliaSet((posX - 100) / 200, posY / 200);
 
 		frame.addKeyListener(new Listener());
 
@@ -57,11 +60,11 @@ public class Frame extends JPanel implements ActionListener {
 		timer.start();
 	}
 
-	public void calculateMandelbrot() {
+	public void calculateMandelbrotSet() {
 		for (int x = 0; x < 600; x++) {
 			for (int y = 0; y < 600; y++) {
 				ImaginaryNum num = new ImaginaryNum(((x + (posX - 100) * zoom - 300) / zoom) / 200d,
-						((y + posY * zoom - 300) / zoom) / 200d);
+						((y - posY * zoom - 300) / zoom) / 200d);
 				ImaginaryNum num2 = num.clone();
 				int i = 0;
 				for (; i < ITERATIONS; i++) {
@@ -71,9 +74,30 @@ public class Frame extends JPanel implements ActionListener {
 					}
 				}
 				if (i == ITERATIONS) {
-					img.setRGB(x, y, Color.BLACK.getRGB());
+					mandelImg.setRGB(x, y, Color.BLACK.getRGB());
 				} else {
-					img.setRGB(x, y, Color.HSBtoRGB((((float) i / ITERATIONS) + hueOffset) % 1, 0.9f, 1f));
+					mandelImg.setRGB(x, y, Color.HSBtoRGB((((float) i / ITERATIONS) + hueOffset) % 1, 0.9f, 1f));
+				}
+			}
+		}
+	}
+
+	public void calculateJuliaSet(double r, double j) {
+		for (int x = 0; x < 600; x++) {
+			for (int y = 0; y < 600; y++) {
+				ImaginaryNum num = new ImaginaryNum(r, j);
+				ImaginaryNum num2 = new ImaginaryNum((x - 300) / 200d, (y - 300) / 200d);
+				int i = 0;
+				for (; i < ITERATIONS; i++) {
+					num2.multi(num2.clone()).add(num);
+					if (num2.r * num2.r + num2.j * num2.j > 4) {
+						break;
+					}
+				}
+				if (i == ITERATIONS) {
+					juliaImg.setRGB(x, y, Color.BLACK.getRGB());
+				} else {
+					juliaImg.setRGB(x, y, Color.HSBtoRGB((((float) i / ITERATIONS) + hueOffset) % 1, 0.9f, 1f));
 				}
 			}
 		}
@@ -83,11 +107,13 @@ public class Frame extends JPanel implements ActionListener {
 	public void paint(Graphics g) {
 		Graphics2D g2D = (Graphics2D) g;
 
-		g2D.drawImage(img, 10, 10, null);
+		g2D.drawImage(mandelImg, 10, 10, null);
+		g2D.drawImage(juliaImg, 620, 10, null);
 
 		g2D.setColor(Color.BLACK);
 
 		g2D.drawRect(10, 10, 600, 600);
+		g2D.drawRect(620, 10, 600, 600);
 		g2D.setColor(Color.WHITE);
 		g2D.drawLine(10 + 280, 10 + 300, 10 + 320, 10 + 300);
 		g2D.drawLine(10 + 300, 10 + 280, 10 + 300, 10 + 320);
@@ -96,10 +122,16 @@ public class Frame extends JPanel implements ActionListener {
 		g2D.setFont(new Font("Courier", Font.BOLD, 20));
 		g2D.drawString("Interations (Alt): " + ITERATIONS, 15, 30);
 		g2D.drawString("Zoom (Ctrl): " + zoom, 15, 50);
+
+		g2D.drawString("Julia Set: " + round((posX - 100) / 200, 4) + " - " + round(posY / 200, 4), 625, 30);
+
 		g2D.setColor(Color.BLACK);
 		g2D.setFont(new Font("Courier", Font.BOLD, 20));
 		g2D.drawString("Interations (Alt): " + ITERATIONS, 16, 31);
 		g2D.drawString("Zoom (Ctrl): " + zoom, 16, 51);
+
+		g2D.drawString("Julia Set: " + round((posX - 100) / 200, 4) + " - " + round(posY / 200, 4), 626, 31);
+
 	}
 
 	@Override
@@ -122,7 +154,7 @@ public class Frame extends JPanel implements ActionListener {
 					zoom += zoom * 0.5;
 				} else {
 					if (e.isShiftDown()) {
-						posY -= 100 / zoom;
+						posY += 100 / zoom;
 					} else if (e.isAltDown()) {
 						if (ITERATIONS < 10) {
 							ITERATIONS += 1;
@@ -132,7 +164,7 @@ public class Frame extends JPanel implements ActionListener {
 							ITERATIONS += 10;
 						}
 					} else {
-						posY -= 20 / zoom;
+						posY += 20 / zoom;
 					}
 				}
 				press = true;
@@ -142,7 +174,7 @@ public class Frame extends JPanel implements ActionListener {
 					zoom -= zoom / 3;
 				} else {
 					if (e.isShiftDown()) {
-						posY += 100 / zoom;
+						posY -= 100 / zoom;
 					} else if (e.isAltDown()) {
 						if (ITERATIONS <= 10) {
 							if (ITERATIONS > 1) {
@@ -154,7 +186,7 @@ public class Frame extends JPanel implements ActionListener {
 							ITERATIONS -= 10;
 						}
 					} else {
-						posY += 20 / zoom;
+						posY -= 20 / zoom;
 					}
 				}
 				press = true;
@@ -175,12 +207,24 @@ public class Frame extends JPanel implements ActionListener {
 				}
 				press = true;
 			}
-			calculateMandelbrot();
+//			if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+//				calculateJuliaSet((posX - 100) / 200, posY / 200);
+//			}
+			calculateJuliaSet((posX - 100) / 200, posY / 200);
+			calculateMandelbrotSet();
 		}
 
 		@Override
 		public void keyReleased(KeyEvent e) {
 			press = false;
 		}
+	}
+	
+	public static double round(double input, int count) {
+		double output = input;
+		output *= Math.pow(10, count);
+		output = Math.round(output);
+		output /= Math.pow(10, count);
+		return output;
 	}
 }

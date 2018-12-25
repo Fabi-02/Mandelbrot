@@ -24,6 +24,7 @@ import mandelbrot.utils.ImaginaryNum;
 public class Frame extends JPanel implements ActionListener {
 	JFrame frame;
 
+	final int threadCount = 60;
 	public int ITERATIONS = 200;
 	final float hueOffset = 0.65f;
 
@@ -60,47 +61,102 @@ public class Frame extends JPanel implements ActionListener {
 		timer.start();
 	}
 
+	int mbFinishes = 0;
+
 	public void calculateMandelbrotSet() {
-		for (int x = 0; x < 600; x++) {
-			for (int y = 0; y < 600; y++) {
-				ImaginaryNum num = new ImaginaryNum(((x + (posX - 100) * zoom - 300) / zoom) / 200d,
-						((y - posY * zoom - 300) / zoom) / 200d);
-				ImaginaryNum num2 = num.clone();
-				int i = 0;
-				for (; i < ITERATIONS; i++) {
-					num2.multi(num2.clone()).add(num);
-					if (num2.r * num2.r + num2.j * num2.j > 4) {
-						break;
+		mbFinishes = 0;
+
+		final BufferedImage tempImg = new BufferedImage(600, 600, BufferedImage.TYPE_INT_ARGB);
+
+		for (int thread = 0; thread < threadCount; thread++) {
+			final int threadID = thread;
+			final int groupHeight = 600 / threadCount;
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					for (int x = 0; x < 600; x++) {
+						for (int y = groupHeight * threadID; y < groupHeight * threadID + groupHeight; y++) {
+							ImaginaryNum num = new ImaginaryNum(((x + (posX - 100) * zoom - 300) / zoom) / 200d,
+									((y - posY * zoom - 300) / zoom) / 200d);
+							ImaginaryNum num2 = num.clone();
+							int i = 0;
+							for (; (i < ITERATIONS) && (num2.r * num2.r + num2.j * num2.j <= 4); i++) {
+								num2.multi(num2.clone()).add(num);
+							}
+							if (i == ITERATIONS) {
+								tempImg.setRGB(x, y, Color.BLACK.getRGB());
+							} else {
+								tempImg.setRGB(x, y,
+										Color.HSBtoRGB((((float) i / ITERATIONS) + hueOffset) % 1, 0.9f, 1f));
+							}
+						}
+					}
+					mbFinishes++;
+					if (mbFinishes == threadCount) {
+						mandelImg = tempImg;
+						mbFinishes = 0;
 					}
 				}
-				if (i == ITERATIONS) {
-					mandelImg.setRGB(x, y, Color.BLACK.getRGB());
-				} else {
-					mandelImg.setRGB(x, y, Color.HSBtoRGB((((float) i / ITERATIONS) + hueOffset) % 1, 0.9f, 1f));
-				}
-			}
+			}).start();
 		}
 	}
 
+	int juFinishes = 0;
+	
 	public void calculateJuliaSet(double r, double j) {
-		for (int x = 0; x < 600; x++) {
-			for (int y = 0; y < 600; y++) {
-				ImaginaryNum num = new ImaginaryNum(r, j);
-				ImaginaryNum num2 = new ImaginaryNum((x - 300) / 200d, (y - 300) / 200d);
-				int i = 0;
-				for (; i < ITERATIONS; i++) {
-					num2.multi(num2.clone()).add(num);
-					if (num2.r * num2.r + num2.j * num2.j > 4) {
-						break;
+		juFinishes = 0;
+
+		final BufferedImage tempImg = new BufferedImage(600, 600, BufferedImage.TYPE_INT_ARGB);
+
+		for (int thread = 0; thread < threadCount; thread++) {
+			final int threadID = thread;
+			final int groupHeight = 600 / threadCount;
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					for (int x = 0; x < 600; x++) {
+						for (int y = groupHeight * threadID; y < groupHeight * threadID + groupHeight; y++) {
+							ImaginaryNum num = new ImaginaryNum(r, j);
+							ImaginaryNum num2 = new ImaginaryNum((x - 300) / 200d, (y - 300) / 200d);
+							int i = 0;
+							for (; (i < ITERATIONS) && (num2.r * num2.r + num2.j * num2.j <= 4); i++) {
+								num2.multi(num2.clone()).add(num);
+							}
+							if (i == ITERATIONS) {
+								tempImg.setRGB(x, y, Color.BLACK.getRGB());
+							} else {
+								tempImg.setRGB(x, y, Color.HSBtoRGB((((float) i / ITERATIONS) + hueOffset) % 1, 0.9f, 1f));
+							}
+							
+						}
+					}
+					juFinishes++;
+					if (juFinishes == threadCount) {
+						juliaImg = tempImg;
+						juFinishes = 0;
 					}
 				}
-				if (i == ITERATIONS) {
-					juliaImg.setRGB(x, y, Color.BLACK.getRGB());
-				} else {
-					juliaImg.setRGB(x, y, Color.HSBtoRGB((((float) i / ITERATIONS) + hueOffset) % 1, 0.9f, 1f));
-				}
-			}
+			}).start();
 		}
+
+//		for (int x = 0; x < 600; x++) {
+//			for (int y = 0; y < 600; y++) {
+//				ImaginaryNum num = new ImaginaryNum(r, j);
+//				ImaginaryNum num2 = new ImaginaryNum((x - 300) / 200d, (y - 300) / 200d);
+//				int i = 0;
+//				for (; i < ITERATIONS; i++) {
+//					num2.multi(num2.clone()).add(num);
+//					if (num2.r * num2.r + num2.j * num2.j > 4) {
+//						break;
+//					}
+//				}
+//				if (i == ITERATIONS) {
+//					juliaImg.setRGB(x, y, Color.BLACK.getRGB());
+//				} else {
+//					juliaImg.setRGB(x, y, Color.HSBtoRGB((((float) i / ITERATIONS) + hueOffset) % 1, 0.9f, 1f));
+//				}
+//			}
+//		}
 	}
 
 	@Override
@@ -219,7 +275,7 @@ public class Frame extends JPanel implements ActionListener {
 			press = false;
 		}
 	}
-	
+
 	public static double round(double input, int count) {
 		double output = input;
 		output *= Math.pow(10, count);

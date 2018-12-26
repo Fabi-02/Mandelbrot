@@ -24,7 +24,7 @@ import mandelbrot.utils.ImaginaryNum;
 public class Frame extends JPanel implements ActionListener {
 	JFrame frame;
 
-	final int threadCount = 60;
+	final int threadCount = 20;
 	public int ITERATIONS = 200;
 	final float hueOffset = 0.65f;
 

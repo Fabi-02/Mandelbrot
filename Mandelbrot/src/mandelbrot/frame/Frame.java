@@ -201,7 +201,7 @@ public class Frame extends JPanel implements ActionListener {
 
 		public void keyPressed(KeyEvent e) {
 
-			if (press == true) {
+			if (press == true || mbFinishes != 0 || juFinishes != 0) {
 				return;
 			}
 
